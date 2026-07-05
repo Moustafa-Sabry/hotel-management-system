@@ -12,6 +12,8 @@ import { OffersService } from './offer.service';
 import { CreateOfferDto } from './dto/create.offers.dto';
 import { GetOffersDto } from './dto/get.offers.dto';
 import { UpdateOfferDto } from './dto/update.offers.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { multerOptions } from 'src/common/multer/multer.config';
 
 
 
@@ -21,10 +23,16 @@ export class OffersController {
     private readonly offersService: OffersService,
   ) {}
 
+  
   @Post()
-  addOffer(@Body() body: CreateOfferDto) {
+  @UseInterceptors(FileInterceptor('image', multerOptions))
+  addOffer(
+  @UploadedFile() file: Express.Multer.File,
+  @Body() body: CreateOfferDto,
+  ) {
+    body.image = file.filename;
     return this.offersService.addOffer(body);
-  }
+   }
 
   @Get()
   getAllOffers(@Query() query: GetOffersDto) {

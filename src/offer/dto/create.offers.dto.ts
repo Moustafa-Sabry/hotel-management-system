@@ -1,5 +1,7 @@
+import { Type } from 'class-transformer';
 import {
   IsNumber,
+  IsOptional,
   IsString,
   MaxLength,
   Min,
@@ -16,10 +18,12 @@ export class CreateOfferDto {
   @MaxLength(1000)
   description: string;
 
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   price: number;
 
+  @IsOptional()
   @IsString()
-  image: string;
+  image?: string;
 }
