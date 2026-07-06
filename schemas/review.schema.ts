@@ -14,7 +14,7 @@ export class Review {
     type: mongoose.Schema.Types.ObjectId,
     ref: User.name,
     required: true,
-  })
+  })  
   user!: mongoose.Types.ObjectId;
 
   @Prop({
@@ -32,10 +32,10 @@ export class Review {
   rating!: number;
 
   @Prop({
-    trim: true,
-    default: '',
-  })
-  comment!: string;
+  trim: true,
+  default: '',
+})
+comment!: string;
 }
 
 export const ReviewSchema = SchemaFactory.createForClass(Review);
