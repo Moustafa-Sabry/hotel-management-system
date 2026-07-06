@@ -10,9 +10,10 @@ import { ReviewModule } from './review/review.module';
 import { FavouriteModule } from './favourite/favourite.module';
 import { FacilityModule } from './facility/facility.module';
 import { AuthModule } from './auth/auth.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
-  imports: [DatabaseModule, UserModule, RoomModule, BookingModule, OfferModule, ReviewModule, FavouriteModule, FacilityModule, AuthModule,AuthModule ],
+  imports: [DatabaseModule, UserModule, RoomModule, BookingModule, OfferModule, ReviewModule, FavouriteModule, FacilityModule, AuthModule,AuthModule, DashboardModule ],
   controllers: [AppController],
   providers: [AppService],
 })
