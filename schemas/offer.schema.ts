@@ -41,7 +41,7 @@ export class Offer {
 
   @Prop({
     required: true,
-  })
+  })0
   endDate: Date;
 
 //     @Prop({type: [{ type: Types.ObjectId, ref: Room.name }], default: [],})
