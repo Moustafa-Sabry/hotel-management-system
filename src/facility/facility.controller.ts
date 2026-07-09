@@ -12,6 +12,7 @@ import { CreateFacilityDto } from './dto/create-facility.dto';
 import { UpdateFacilityDto } from './dto/update-facility.dto';
 
 @Controller('facilities')
+
 export class FacilityController {
   constructor(private readonly facilityService: FacilityService) {}
 
@@ -31,9 +32,7 @@ export class FacilityController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateFacilityDto: UpdateFacilityDto,
+  update(@Param('id') id: string,@Body() updateFacilityDto: UpdateFacilityDto,
   ) {
     return this.facilityService.update(id, updateFacilityDto);
   }

@@ -19,6 +19,11 @@ export class Facility {
     default: '',
   })
   icon: string;
+
+   @Prop({
+    default: false,
+  })
+  isDeleted: boolean;
 }
 
 export const FacilitySchema = SchemaFactory.createForClass(Facility);

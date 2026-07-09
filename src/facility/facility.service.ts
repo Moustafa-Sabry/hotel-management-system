@@ -1,20 +1,16 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
+import {ConflictException,HttpException,Injectable,NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Facility } from '../schemas/facility.schema';
+import { Facility } from 'schemas/facility.schema';
 import { CreateFacilityDto } from './dto/create-facility.dto';
 import { UpdateFacilityDto } from './dto/update-facility.dto';
 
 @Injectable()
+
 export class FacilityService {
-  constructor(
-    @InjectModel(Facility.name)
-    private readonly facilityModel: Model<Facility>,
-  ) {}
+  constructor(@InjectModel(Facility.name)private readonly facilityModel: Model<Facility>,) {}
+
 
   async create(createFacilityDto: CreateFacilityDto) {
     const facility = await this.facilityModel.findOne({
@@ -28,12 +24,15 @@ export class FacilityService {
     return await this.facilityModel.create(createFacilityDto);
   }
 
+
   async findAll() {
-    return await this.facilityModel.find();
+    return await this.facilityModel.find({isDeleted:false});
   }
+
+
 
   async findOne(id: string) {
-    const facility = await this.facilityModel.findById(id);
+    const facility = await this.facilityModel.findById({_id:id, isDeleted: false,});
 
     if (!facility) {
       throw new NotFoundException('Facility not found');
@@ -41,13 +40,18 @@ export class FacilityService {
 
     return facility;
   }
+
+
 
   async update(id: string, updateFacilityDto: UpdateFacilityDto) {
-    const facility = await this.facilityModel.findByIdAndUpdate(
-      id,
-      updateFacilityDto,
-      { new: true },
-    );
+
+if(updateFacilityDto.name) {
+
+  const existingfacilityName = await this.facilityModel.findOne(
+    { name:updateFacilityDto.name , _id: { $ne: id } } )
+ if (existingfacilityName) {throw new ConflictException("facility name alrready exists")}
+  }
+   const facility = await this.facilityModel.findByIdAndUpdate(id,updateFacilityDto,{ new: true },);
 
     if (!facility) {
       throw new NotFoundException('Facility not found');
@@ -56,8 +60,10 @@ export class FacilityService {
     return facility;
   }
 
-  async remove(id: string) {
-    const facility = await this.facilityModel.findByIdAndDelete(id);
+
+  async remove (id: string) {
+
+    const facility = await this.facilityModel.findByIdAndUpdate(id,{isDeleted:true},{new:true});
 
     if (!facility) {
       throw new NotFoundException('Facility not found');

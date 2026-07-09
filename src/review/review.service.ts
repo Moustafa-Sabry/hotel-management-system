@@ -1,32 +1,34 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import {BadRequestException,Injectable,NotFoundException,} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model , Types } from 'mongoose';
 
 import { Review } from '../schemas/review.schema';
 import { Room } from '../schemas/room.schema';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { UpdateReviewDto } from './dto/update-review.dto';
 
 @Injectable()
 export class ReviewService {
   constructor(
-    @InjectModel(Review.name)
-    private readonly reviewModel: Model<Review>,
+   @InjectModel(Review.name)private readonly reviewModel: Model<Review>,
+   @InjectModel(Room.name)private readonly roomModel: Model<Room>,) {}
 
-    @InjectModel(Room.name)
-    private readonly roomModel: Model<Room>,
-  ) {}
+
+
+
+
 
   async create(userId: string, dto: CreateReviewDto) {
-    const exists = await this.reviewModel.findOne({
+const room = await this.roomModel.findOne({_id: dto.room , isDeleted:false })
+if (!room) {
+  throw new NotFoundException(" room is not found >>")
+}
+const exists = await this.reviewModel.findOne({
       user: userId,
       room: dto.room,
     });
 
-    if (exists) {
+  if (exists) {
       throw new BadRequestException(
         'You already reviewed this room',
       );
@@ -37,16 +39,22 @@ export class ReviewService {
       user: userId,
     });
 
-    await this.updateAverage(dto.room);
+    await this.updateAverageRating(dto.room);
 
     return review;
   }
+
+
+
 
   async getRoomReviews(roomId: string) {
     return this.reviewModel
       .find({ room: roomId })
       .populate('user', 'name');
   }
+
+
+
 
   async remove(id: string, userId: string) {
     const review = await this.reviewModel.findOne({
@@ -64,30 +72,73 @@ export class ReviewService {
       _id: id,
     });
 
-    await this.updateAverage(review.room.toString());
+    await this.updateAverageRating(review.room.toString());
 
     return {
       message: 'Review deleted successfully',
     };
   }
 
-  private async updateAverage(roomId: string) {
-    const reviews = await this.reviewModel.find({
-      room: roomId,
-    });
 
-    let average = 0;
 
-    if (reviews.length) {
-      average =
-        reviews.reduce(
-          (sum, review) => sum + review.rating,
-          0,
-        ) / reviews.length;
-    }
 
-    await this.roomModel.findByIdAndUpdate(roomId, {
-      averageRating: average,
-    });
-  }
+private async updateAverageRating(roomId: string) {
+  const result = await this.reviewModel.aggregate([
+    {
+      $match: {
+        room: new Types.ObjectId(roomId),
+      },
+    },
+    {
+      $group: {
+        _id: '$room',
+        averageRating: {
+          $avg: '$rating',
+        },
+      },
+    },
+  ]);
+
+  await this.roomModel.findByIdAndUpdate(roomId, {
+    averageRating:
+      result.length > 0 ? result[0].averageRating : 0,
+  });
 }
+
+
+
+
+
+async update(
+  id: string,
+  userId: string,
+  dto: UpdateReviewDto,
+) {
+  const review = await this.reviewModel.findOne({
+    _id: id,
+    user: userId,
+  });
+
+  if (!review) {
+    throw new NotFoundException('Review not found');
+  }
+
+  await this.reviewModel.updateOne(
+    { _id: id },
+    dto,
+  );
+
+  await this.updateAverageRating(
+    review.room.toString(),
+  );
+
+  return this.reviewModel.findById(id);
+}
+
+
+
+}
+
+
+
+  
