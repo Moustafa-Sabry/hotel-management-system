@@ -7,6 +7,8 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { OffersService } from './offer.service';
 import { CreateOfferDto } from './dto/create.offers.dto';

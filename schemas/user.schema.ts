@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { HydratedDocument } from 'mongoose';
+import { Role } from 'src/common/multer/enums/role.enum';
 
 export type UserDocument = HydratedDocument<User>;
 @Schema({
@@ -32,10 +33,10 @@ export class User {
   profileImage?: string;
 
   @Prop({
-    enum: ['admin', 'user'],
-    default: 'user',
+    enum: Role,
+    default: Role.USER,
   })
-  role: string;
+  role: Role;
 
   @Prop({
     default: true,
@@ -64,5 +65,7 @@ UserSchema.pre('save', async function () {
   if (!this.isModified('password')) {
     return;
   }
-  this.password = await bcrypt.hash(this.password, 8);
+  const saltRounds = Number(process.env.SALT_ROUNDS) || 10;
+   
+  this.password = await bcrypt.hash(this.password, saltRounds);
 });

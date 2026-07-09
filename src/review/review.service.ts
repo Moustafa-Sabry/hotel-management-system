@@ -2,10 +2,11 @@ import {BadRequestException,Injectable,NotFoundException,} from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose';
 import { Model , Types } from 'mongoose';
 
-import { Review } from '../schemas/review.schema';
-import { Room } from '../schemas/room.schema';
+
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { Review } from 'schemas/review.schema';
+import { Room } from 'schemas/room.schema';
 
 @Injectable()
 export class ReviewService {

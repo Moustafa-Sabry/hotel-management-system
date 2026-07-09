@@ -13,9 +13,27 @@ import { RoomCategoriesModule } from './room-categories/room-categories.module';
 import { AuthModule } from './auth/auth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { MailModule } from './mail/mail.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [DatabaseModule, UserModule, RoomModule, BookingModule, OfferModule, ReviewModule, FavouriteModule, FacilityModule, AuthModule,RoomCategoriesModule, DashboardModule, MailModule ],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+
+     DatabaseModule,
+     UserModule,
+     RoomModule,
+     BookingModule,
+     OfferModule,
+     ReviewModule,
+     FavouriteModule,
+     FacilityModule,
+     AuthModule,
+     RoomCategoriesModule,
+     DashboardModule,
+     MailModule ],
+     
   controllers: [AppController],
   providers: [AppService],
 })
