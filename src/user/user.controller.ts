@@ -1,7 +1,24 @@
-import { Controller } from '@nestjs/common';
-import { UserService } from './user.service';
+import { Controller, Delete, Get, Param, Query } from '@nestjs/common';
+import { UsersService } from './user.service';
+import { GetUsersDto } from './dto/get-users.dto';
 
-@Controller('user')
-export class UserController {
-  constructor(private readonly userService: UserService) {}
+
+@Controller('users')
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get()
+  getAllUsers(@Query() query: GetUsersDto) {
+    return this.usersService.getAllUsers(query);
+  }
+
+  @Get(':id')
+  getOneUser(@Param('id') id: string) {
+    return this.usersService.getOneUser(id);
+  }
+
+  @Delete(':id')
+  deactivateUser(@Param('id') id: string) {
+    return this.usersService.deactivateUser(id);
+  }
 }
