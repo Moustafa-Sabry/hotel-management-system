@@ -29,6 +29,6 @@ export class RegisterDto {
   })
   password: string;
 
-  @IsPhoneNumber()
+  @IsPhoneNumber('EG')
   phoneNumber: string;
 }
