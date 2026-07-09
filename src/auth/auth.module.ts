@@ -9,7 +9,7 @@ import { User, UserSchema } from '../../schemas/user.schema';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { RolesGuard } from './guards/roles.guard';
-
+import { MailModule } from '../mail/mail.module';
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -20,7 +20,7 @@ import { RolesGuard } from './guards/roles.guard';
     ]),
 
     JwtModule.register({
-      secret: process.env.JWT_SECRET ?? 'hotel-management-secret',
+      secret: process.env.JWT_SECRET!,
       signOptions: {
         expiresIn: '7d',
       },
@@ -28,6 +28,7 @@ import { RolesGuard } from './guards/roles.guard';
     PassportModule.register({
       defaultStrategy: 'jwt',
     }),
+    MailModule,
   ],
 
   controllers: [AuthController],

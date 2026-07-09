@@ -51,6 +51,11 @@ export class User {
     default: false,
   })
   isOTPVerified: boolean;
+
+  @Prop({
+    default: 0,
+  })
+  tokenVersion: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

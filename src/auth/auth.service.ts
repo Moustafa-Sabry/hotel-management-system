@@ -18,7 +18,8 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-
+import { generateOTP } from '../utils/otp.util';
+import { MailService } from '../mail/mail.service';
 @Injectable()
 export class AuthService {
   constructor(
@@ -26,28 +27,30 @@ export class AuthService {
     private readonly userModel: Model<UserDocument>,
 
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const isExist = await this.userModel.findOne({
-      email: registerDto.email,
-    });
+    try {
+      const user = new this.userModel(registerDto);
 
-    if (isExist) {
-      throw new BadRequestException('Email already exists');
+      await user.save();
+
+      return {
+        message: 'User created successfully',
+        data: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+        },
+      };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('duplicate key')) {
+        throw new BadRequestException('Email already exists');
+      }
+
+      throw error;
     }
-
-    const user = new this.userModel(registerDto);
-
-    await user.save();
-
-    return {
-      message: 'User created successfully',
-      data: {
-        name: user.name,
-        email: user.email,
-      },
-    };
   }
 
   async login(loginDto: LoginDto) {
@@ -55,7 +58,7 @@ export class AuthService {
       .findOne({
         email: loginDto.email,
       })
-      .select('+password');
+      .select('+password name email role tokenVersion');
 
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
@@ -71,13 +74,25 @@ export class AuthService {
       sub: user._id,
       role: user.role,
       email: user.email,
+      tokenVersion: user.tokenVersion,
     });
 
-    return { message: 'Login successful', token };
+    return {
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    };
   }
 
   async getProfile(userId: string) {
-    const user = await this.userModel.findById(userId);
+    const user = await this.userModel
+      .findById(userId)
+      .select('-password -otp -otpExpires -isOTPVerified');
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -87,16 +102,36 @@ export class AuthService {
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
-    const user = await this.userModel.findByIdAndUpdate(
-      userId,
-      updateProfileDto,
-      {
-        new: true,
-      },
-    );
+    const user = await this.userModel.findById(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    if (updateProfileDto.name) {
+      user.name = updateProfileDto.name;
+    }
+
+    if (updateProfileDto.phone) {
+      user.phone = updateProfileDto.phone;
+    }
+
+    if (updateProfileDto.profileImage) {
+      user.profileImage = updateProfileDto.profileImage;
+    }
+
+    try {
+      await user.save();
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error) {
+        const mongoError = error as any;
+
+        if (mongoError.code === 11000 && mongoError.keyPattern?.email) {
+          throw new BadRequestException('Email already exists');
+        }
+      }
+
+      throw error;
     }
 
     return {
@@ -112,15 +147,20 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    const isMatch = await bcrypt.compare(
-      changePasswordDto.currentPassword,
-      user.password,
-    );
+    const isMatch = await bcrypt.compare(changePasswordDto.currentPassword, user.password);
 
     if (!isMatch) {
       throw new UnauthorizedException('Current password is incorrect');
     }
 
+    const isSamePassword = await bcrypt.compare(
+      changePasswordDto.newPassword,
+      user.password,
+    );
+
+    if (isSamePassword) {
+      throw new BadRequestException('New password cannot be the same as current password' );
+    }
     user.password = changePasswordDto.newPassword;
 
     await user.save();
@@ -139,7 +179,7 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = generateOTP();
 
     user.otp = otp;
     user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
@@ -147,8 +187,8 @@ export class AuthService {
 
     await user.save();
 
-    // TODO: Send email here
-    console.log('OTP:', otp);
+    await this.mailService.sendOTPEmail(user.email, otp);
+    // console.log('OTP:', otp);
 
     return {
       message: 'OTP sent successfully',
@@ -156,24 +196,31 @@ export class AuthService {
   }
 
   async verifyOTP(verifyOtpDto: VerifyOtpDto) {
-    const user = await this.userModel.findOne({
-      email: verifyOtpDto.email,
-    });
+    const user = await this.userModel
+      .findOne({
+        email: verifyOtpDto.email,
+      })
+      .select('+otp otpExpires isOTPVerified');
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    if (
-      !user.otp ||
-      user.otp !== verifyOtpDto.otp ||
-      !user.otpExpires ||
-      user.otpExpires.getTime() < Date.now()
-    ) {
+    const isExpired = !user.otpExpires || user.otpExpires.getTime() < Date.now();
+
+    if (!user.otp || user.otp !== verifyOtpDto.otp || isExpired) {
+
+      user.otp = undefined;
+      user.otpExpires = undefined;
+
+      await user.save();
+
       throw new BadRequestException('Invalid or expired OTP');
     }
 
     user.isOTPVerified = true;
+
+    // remove OTP after successful verification
     user.otp = undefined;
     user.otpExpires = undefined;
 
@@ -189,8 +236,7 @@ export class AuthService {
       .findOne({
         email: resetPasswordDto.email,
       })
-      .select('+password');
-
+      .select('+password tokenVersion isOTPVerified');
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -201,6 +247,8 @@ export class AuthService {
 
     user.password = resetPasswordDto.password;
 
+    user.otp = undefined;
+    user.otpExpires = undefined;
     user.isOTPVerified = false;
 
     await user.save();
