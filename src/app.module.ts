@@ -9,10 +9,11 @@ import { OfferModule } from './offer/offer.module';
 import { ReviewModule } from './review/review.module';
 import { FavouriteModule } from './favourite/favourite.module';
 import { FacilityModule } from './facility/facility.module';
-import { AuthModule } from './auth/auth.module';
+import { RoomModule } from './categories/room/room.module';
+import { RoomCategoriesModule } from './room-categories/room-categories.module';
 
 @Module({
-  imports: [DatabaseModule, UserModule, RoomModule, BookingModule, OfferModule, ReviewModule, FavouriteModule, FacilityModule, AuthModule,AuthModule ],
+  imports: [DatabaseModule, UserModule, RoomModule, BookingModule, OfferModule, ReviewModule, FavouriteModule, FacilityModule, RoomCategoriesModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -1,20 +1,14 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Req,
-  UseGuards,
+import {Body,Controller, Delete, Get,Param,Post, Req,UseGuards,
 } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FavouriteService } from './favourite.service';
 import { CreateFavouriteDto } from './dto/create-favourite.dto';
+import type { FavouriteRequest } from './interfaces/FavouriteRequest';
 
 @UseGuards(JwtAuthGuard)
 @Controller('favourites')
+
 export class FavouriteController {
   constructor(
     private readonly favouriteService: FavouriteService,
@@ -22,7 +16,7 @@ export class FavouriteController {
 
   @Post()
   create(
-    @Req() req: any,
+    @Req() req: FavouriteRequest,
     @Body() dto: CreateFavouriteDto,
   ) {
     return this.favouriteService.create(
@@ -32,7 +26,7 @@ export class FavouriteController {
   }
 
   @Get()
-  getMyFavourites(@Req() req: any) {
+  getMyFavourites(@Req() req: FavouriteRequest) {
     return this.favouriteService.findMyFavourites(
       req.user._id.toString(),
     );
@@ -40,7 +34,7 @@ export class FavouriteController {
 
   @Delete(':roomId')
   remove(
-    @Req() req: any,
+    @Req() req: FavouriteRequest,
     @Param('roomId') roomId: string,
   ) {
     return this.favouriteService.remove(

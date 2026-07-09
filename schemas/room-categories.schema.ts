@@ -1,31 +1,35 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-export type FacilityDocument = HydratedDocument<Facility>;
+export type RoomCategoryDocument =HydratedDocument<RoomCategory>;
 
 @Schema({
   timestamps: true,
 })
-export class Facility {
+
+export class RoomCategory {
+
   @Prop({
     required: true,
     unique: true,
     trim: true,
-    minlength: 2,
-    maxlength: 50,
   })
   name: string;
+
 
   @Prop({
     trim: true,
     default: '',
   })
-  icon: string;
+  description: string;
 
-   @Prop({
+
+  @Prop({
     default: false,
   })
+  
   isDeleted: boolean;
 }
 
-export const FacilitySchema = SchemaFactory.createForClass(Facility);
+export const RoomCategorySchema =
+  SchemaFactory.createForClass(RoomCategory);
