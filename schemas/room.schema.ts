@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { Facility } from './facility.schema';
-import { RoomStatus } from 'src/common/multer/enums/room-status.enum';
+import { RoomStatus } from 'src/common/enums/room-status.enum';
 
 export type RoomDocument = HydratedDocument<Room>;
 

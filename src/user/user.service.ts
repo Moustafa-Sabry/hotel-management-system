@@ -4,8 +4,6 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from 'schemas/user.schema';
 import { GetUsersDto } from './dto/get-users.dto';
 
-
-
 @Injectable()
 export class UsersService {
   constructor(

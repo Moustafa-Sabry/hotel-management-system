@@ -14,6 +14,7 @@ import { AuthModule } from './auth/auth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { MailModule } from './mail/mail.module';
 import { ConfigModule } from '@nestjs/config';
+import { CarModule } from './car/car.module';
 
 @Module({
   imports: [
@@ -32,7 +33,9 @@ import { ConfigModule } from '@nestjs/config';
      AuthModule,
      RoomCategoriesModule,
      DashboardModule,
-     MailModule ],
+     MailModule,
+     CarModule,
+     ],
      
   controllers: [AppController],
   providers: [AppService],

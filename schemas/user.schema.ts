@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { HydratedDocument } from 'mongoose';
-import { Role } from 'src/common/multer/enums/role.enum';
+import { Role } from 'src/common/enums/role.enum';
 
 export type UserDocument = HydratedDocument<User>;
 @Schema({
