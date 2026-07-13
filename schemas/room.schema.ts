@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { Facility } from './facility.schema';
+import { RoomCategory } from './room-categories.schema';
 import { RoomStatus } from 'src/common/enums/room-status.enum';
 
 export type RoomDocument = HydratedDocument<Room>;
@@ -66,10 +67,16 @@ export class Room {
   isDeleted: boolean;
 
   @Prop({
-  enum: RoomStatus,
-  default: RoomStatus.AVAILABLE,
+    enum: RoomStatus,
+    default: RoomStatus.AVAILABLE,
   })
   status: RoomStatus;
+  @Prop({
+    type: Types.ObjectId,
+    ref: RoomCategory.name,
+    required: true,
+  })
+  category: Types.ObjectId;
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);
@@ -77,3 +84,8 @@ export const RoomSchema = SchemaFactory.createForClass(Room);
 RoomSchema.index({ price: 1 });
 RoomSchema.index({ averageRating: -1 });
 RoomSchema.index({ status: 1 });
+RoomSchema.index({ category: 1 });
+RoomSchema.index({
+  category: 1,
+  isDeleted: 1,
+});

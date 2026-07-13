@@ -5,7 +5,6 @@ import { CarController } from './car.controller';
 import { CarService } from './car.service';
 import { Car, CarSchema } from 'schemas/car-rental.schema';
 
-
 @Module({
   imports: [
     MongooseModule.forFeature([

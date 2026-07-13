@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { RoomCategory } from 'schemas/room-categories.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -12,69 +13,83 @@ import { GetRoomDto } from './dto/get-room.dto';
 import { Room } from 'schemas/room.schema';
 
 @Injectable()
-export class RoomService {constructor(@InjectModel(Room.name)private readonly roomModel: Model<Room>) {}
+export class RoomService {
+  constructor(
+    @InjectModel(Room.name) private readonly roomModel: Model<Room>,
+    @InjectModel(RoomCategory.name)
+    private readonly categoryModel: Model<RoomCategory>,
+  ) {}
 
   async create(createRoomDto: CreateRoomDto) {
-
     const room = await this.roomModel.findOne({
       roomNumber: createRoomDto.roomNumber,
+      isDeleted: false,
     });
 
     if (room) {
       throw new ConflictException('Room number already exists');
     }
+    const category = await this.categoryModel.findOne({
+      _id: createRoomDto.category,
+      isDeleted: false,
+    });
 
-    return await this.roomModel.create(createRoomDto);
+    if (!category) {
+      throw new NotFoundException('Room category not found');
+    }
+    return this.roomModel.create(createRoomDto);
   }
 
   async findAll(query: GetRoomDto) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
-const filter: any = {
-  isDeleted: false,
-};
+    const filter: any = {
+      isDeleted: false,
+    };
 
-if (query.search) {
-  filter.roomNumber = {
-    $regex: query.search,
-    $options: 'i',
-  };
-}
+    if (query.search) {
+      filter.roomNumber = {
+        $regex: query.search,
+        $options: 'i',
+      };
+    }
 
-if (query.capacity) {
-  filter.capacity = Number(query.capacity);
-}
+    if (query.capacity) {
+      filter.capacity = Number(query.capacity);
+    }
 
-if (query.minPrice || query.maxPrice) {
-  filter.price = {};
+    if (query.minPrice || query.maxPrice) {
+      filter.price = {};
 
-  if (query.minPrice) {
-    filter.price.$gte = Number(query.minPrice);
-  }
+      if (query.minPrice) {
+        filter.price.$gte = Number(query.minPrice);
+      }
 
-  if (query.maxPrice) {
-    filter.price.$lte = Number(query.maxPrice);
-  }
-}
+      if (query.maxPrice) {
+        filter.price.$lte = Number(query.maxPrice);
+      }
+    }
 
-if (query.rating) {
-  filter.averageRating = {
-    $gte: Number(query.rating),
-  };
-}
+    if (query.rating) {
+      filter.averageRating = {
+        $gte: Number(query.rating),
+      };
+    }
 
-if (query.facility) {
-  filter.facilities = query.facility;
-}
-   
-
+    if (query.facility) {
+      filter.facilities = query.facility;
+    }
+    if (query.category) {
+      filter.category = query.category;
+    }
     const rooms = await this.roomModel
       .find(filter)
       .populate('facilities')
+      .populate('category')
       .skip(skip)
-      .lean()
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     const total = await this.roomModel.countDocuments(filter);
 
@@ -88,20 +103,16 @@ if (query.facility) {
   }
 
   async update(id: string, updateRoomDto: UpdateRoomDto) {
+    if (updateRoomDto.roomNumber) {
+      const existing = await this.roomModel.findOne({
+        roomNumber: updateRoomDto.roomNumber,
+        _id: { $ne: id },
+      });
 
-
-  if (updateRoomDto.roomNumber) {
-    const existing = await this.roomModel.findOne({
-      roomNumber: updateRoomDto.roomNumber,
-      _id: { $ne: id },
-    });
-
-    if (existing) {
-      throw new ConflictException(
-        'Room number already exists',
-      );
+      if (existing) {
+        throw new ConflictException('Room number already exists');
+      }
     }
-  }
     const room = await this.roomModel.findOneAndUpdate(
       {
         _id: id,
@@ -158,7 +169,6 @@ if (query.facility) {
   //   return room;
   // }
 
-  
   // async findOne(id: string) {
   //   const room = await this.roomModel
   //     .findOne({
@@ -174,27 +184,27 @@ if (query.facility) {
   //   return room;
   // }
 
+  private async findRoomById(id: string) {
+    const room = await this.roomModel
+      .findOne({
+        _id: id,
+        isDeleted: false,
+      })
+      .populate('facilities')
+      .populate('category')
+      .lean();
+    if (!room) {
+      throw new NotFoundException('Room not found');
+    }
 
-private async findRoomById(id: string) {
-  const room = await this.roomModel
-    .findOne({
-      _id: id,
-      isDeleted: false,
-    })
-    .populate('facilities')
-    .lean();
-  if (!room) {
-    throw new NotFoundException('Room not found');
+    return room;
   }
 
-  return room;
-}
+  async findOne(id: string) {
+    return this.findRoomById(id);
+  }
 
-async findOne(id: string) {
-  return this.findRoomById(id);
-}
-
-async getRoomDetails(id: string) {
-  return this.findRoomById(id);
-}
+  async getRoomDetails(id: string) {
+    return this.findRoomById(id);
+  }
 }
